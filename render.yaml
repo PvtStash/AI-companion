@@ -1,28 +1,37 @@
 services:
   - type: web
     name: companion-server
-    env: node
+    runtime: node
     rootDir: server
     plan: starter
+    autoDeploy: true
+    healthCheckPath: /health
     buildCommand: npm ci && npx prisma generate && npx prisma migrate deploy
     startCommand: node src/index.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 8080
+        value: "8080"
+
+      # DB connection injected from the Render Postgres resource
+      - key: DATABASE_URL
+        fromDatabase:
+          name: companion-db
+          property: connectionString
+
+      # Secrets (Render will prompt you for these during Blueprint creation)
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: JOB_TOKEN
+        sync: false
+
+      # Safety toggles
       - key: ALLOW_FLIRT
         value: "true"
       - key: ALLOW_ADULT
         value: "false"
-      - key: JOB_TOKEN
-        sync: false
-    autoDeploy: true
-    healthCheckPath: /health
-    # Link database; Render will inject DATABASE_URL
-    databases:
-      - name: companion-db
 
 databases:
   - name: companion-db
-    plan: starter
+    plan: free
