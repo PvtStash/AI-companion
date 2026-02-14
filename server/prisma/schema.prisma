@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String      @id @default(cuid())
+  email       String      @unique
+  createdAt   DateTime    @default(now())
+  companions  Companion[]
+  messages    Message[]
+}
+
+model Companion {
+  id         String    @id @default(cuid())
+  userId     String
+  name       String
+  toneLevel  Int       @default(20) // 0..100
+  persona    Json      @default("{}")
+  createdAt  DateTime  @default(now())
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages   Message[]
+  memories   Memory[]
+  recaps     Recap[]
+}
+
+model Message {
+  id           String     @id @default(cuid())
+  userId       String
+  companionId  String
+  role         String     // 'user' | 'assistant' | 'system'
+  content      String
+  createdAt    DateTime   @default(now())
+
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companion    Companion  @relation(fields: [companionId], references: [id], onDelete: Cascade)
+
+  @@index([companionId, createdAt])
+}
+
+model Memory {
+  id           String    @id @default(cuid())
+  companionId  String
+  key          String
+  value        String
+  importance   Int       @default(50) // 0..100
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  companion    Companion @relation(fields: [companionId], references: [id], onDelete: Cascade)
+
+  @@index([companionId, importance])
+}
+
+model Recap {
+  id           String    @id @default(cuid())
+  companionId  String
+  summary      String
+  rangeStart   DateTime
+  rangeEnd     DateTime
+  createdAt    DateTime  @default(now())
+
+  companion    Companion @relation(fields: [companionId], references: [id], onDelete: Cascade)
+
+  @@index([companionId, createdAt])
+}
