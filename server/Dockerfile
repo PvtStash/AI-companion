@@ -1,15 +1,17 @@
 FROM node:20-alpine
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+# Copy dependency manifests from the server folder
+COPY server/package.json server/package-lock.json ./
 RUN npm ci
 
-COPY . .
+# Copy the server source
+COPY server/ ./
 
+# Prisma client + migrations at startup
 RUN npx prisma generate
 
 ENV NODE_ENV=production
 EXPOSE 8080
 
-# Run migrations at container start, then launch
 CMD sh -c "npx prisma migrate deploy && node src/index.js"
